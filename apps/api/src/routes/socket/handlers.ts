@@ -67,7 +67,7 @@ export async function setupIOHandlers(io: Server) {
           );
         }
       } catch (error) {
-        console.error("send-message error:", error);
+        console.error("send-message error:", error);   
       }
     };
 
