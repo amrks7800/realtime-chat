@@ -4,6 +4,7 @@ import {
   searchUsersQueriesSchema,
   getProfileParamsSchema,
   updateProfileSchema,
+  checkUsernameSchema,
 } from "../validation/user";
 
 export const searchUsers = async (req: Request, res: Response) => {
@@ -20,6 +21,11 @@ export const searchUsers = async (req: Request, res: Response) => {
       { name: { $regex: validated.data.search, $options: "i" } },
       { username: { $regex: validated.data.search, $options: "i" } },
     ];
+  }
+
+  // Exclude current user from search
+  if (req.user?.id) {
+    query._id = { $ne: req.user.id };
   }
 
   const users = await UserModel.find(query).limit(10);
@@ -66,4 +72,16 @@ export const updateProfile = async (req: Request, res: Response) => {
   }
 
   res.status(200).json(user);
+};
+
+export const checkUsername = async (req: Request, res: Response) => {
+  const validated = checkUsernameSchema.safeParse(req.query);
+
+  if (!validated.success) {
+    return res.status(400).json({ message: validated.error.issues });
+  }
+
+  const user = await UserModel.findOne({ username: validated.data.username });
+
+  res.status(200).json({ available: !user });
 };

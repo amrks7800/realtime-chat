@@ -17,7 +17,7 @@ export const updateRoomSchema = z.object({
 });
 
 export const getMyRoomsParamsSchema = z.object({
-  userId: z.uuid(),
+  userId: z.string(),
 });
 
 export const getRoomByIdQueriesSchema = z.object({
@@ -25,7 +25,7 @@ export const getRoomByIdQueriesSchema = z.object({
 });
 
 export const getRoomByIdParamsSchema = z.object({
-  id: z.uuid(),
+  id: z.string(),
 });
 
 export type GetMyRoomsParamsSchema = z.infer<typeof getMyRoomsParamsSchema>;

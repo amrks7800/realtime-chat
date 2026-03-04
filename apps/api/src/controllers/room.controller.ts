@@ -30,6 +30,14 @@ export const createRoom = async (req: Request, res: Response) => {
 
   const room = await RoomModel.create(validated.data);
 
+  // Add creator as participant
+  if (req.user) {
+    await ParticipantModel.create({
+      roomId: room.id,
+      userId: req.user.id,
+    });
+  }
+
   res.status(201).json(room);
 };
 
@@ -45,8 +53,14 @@ export const getRooms = async (req: Request, res: Response) => {
     return res.status(400).json({ message: validatedQueries.error.issues });
   }
 
+  const userId = validatedParams.data.userId || req.user?.id;
+
+  if (!userId) {
+    return res.status(400).json({ message: "User ID is required" });
+  }
+
   const userRooms = await ParticipantModel.find({
-    userId: validatedParams.data.userId,
+    userId: userId,
   });
 
   const roomIds = userRooms.map((p) => p.roomId);
@@ -64,7 +78,16 @@ export const getRooms = async (req: Request, res: Response) => {
 
   const rooms = await RoomModel.find(query);
 
-  res.status(200).json(rooms);
+  const roomsWithParticipants = await Promise.all(
+    rooms.map(async (room) => {
+      const participants = await ParticipantModel.find({
+        roomId: room.id,
+      }).populate("userId", "name email username image");
+      return { ...room.toJSON(), participants };
+    }),
+  );
+
+  res.status(200).json(roomsWithParticipants);
 };
 
 export const getRoomById = async (req: Request, res: Response) => {

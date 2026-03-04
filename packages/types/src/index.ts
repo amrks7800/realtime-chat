@@ -3,18 +3,21 @@ export interface User {
   name: string;
   email: string;
   username: string;
+  image?: string;
+  _id?: string;
 }
 
 export interface Message {
   id: string;
   content: string;
-  userId: string;
+  userId: string | User;
   roomId: string;
   attachments?: {
     type: "image" | "video" | "file" | "audio";
     url: string;
   }[];
   createdAt: string;
+  _id?: string;
 }
 
 export interface Room {
@@ -25,6 +28,8 @@ export interface Room {
   lastMessage?: string;
   lastMessageTime?: string;
   createdAt: string;
+  participants?: Participant[];
+  _id?: string;
 }
 
 export interface Participant {
@@ -32,6 +37,7 @@ export interface Participant {
   userId: User;
   roomId: string;
   role: "admin" | "member";
+  _id?: string;
 }
 
 export interface MessagePayload {

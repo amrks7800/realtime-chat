@@ -10,12 +10,12 @@ export const sendMessageSchema = z.object({
       }),
     )
     .optional(),
-  roomId: z.uuid(),
-  userId: z.uuid(),
+  roomId: z.string(),
+  userId: z.string(),
 });
 
 export const getMessagesParamsSchema = z.object({
-  roomId: z.uuid(),
+  roomId: z.string(),
 });
 
 export const updateMessageSchema = z.object({
@@ -31,7 +31,7 @@ export const updateMessageSchema = z.object({
 });
 
 export const deleteMessageParamsSchema = z.object({
-  id: z.uuid(),
+  id: z.string(),
 });
 
 export type SendMessageSchema = z.infer<typeof sendMessageSchema>;

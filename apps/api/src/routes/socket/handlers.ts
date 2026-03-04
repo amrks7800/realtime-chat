@@ -3,6 +3,7 @@ import { auth } from "../../lib/auth";
 import { ParticipantModel } from "../../models/participant.model";
 import { Events } from "@repo/types";
 import { MessageModel } from "../../models/message.model";
+import { RoomModel } from "../../models/room.model";
 
 export async function setupIOHandlers(io: Server) {
   io.use(async (socket: Socket, next) => {
@@ -49,7 +50,22 @@ export async function setupIOHandlers(io: Server) {
           attachments: data.attachments,
         });
 
-        io.to(data.roomId).emit("receive-message", message);
+        const populatedMessage = await MessageModel.findById(message._id)
+          .populate("userId", "name username image")
+          .exec();
+
+        if (populatedMessage) {
+          // Update room with last message
+          await RoomModel.findByIdAndUpdate(data.roomId, {
+            lastMessage: data.content,
+            lastMessageTime: new Date(),
+          });
+
+          io.to(data.roomId).emit(
+            "receive-message",
+            populatedMessage.toJSON({ virtuals: true }),
+          );
+        }
       } catch (error) {
         console.error("send-message error:", error);
       }

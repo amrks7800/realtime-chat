@@ -1,12 +1,27 @@
 "use client";
 
-import { useSession, signOut } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { useChat, ChatSDK } from "@chatter/sdk";
+import { Sidebar, SidebarView } from "@/components/chat/sidebar";
+import { ChatWindow } from "@/components/chat/chat-window";
+import { CreateGroupModal } from "@/components/chat/create-group-modal";
+import { Loader2, Zap, MessageSquare, Plus, Users } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
   const { data: session, isPending } = useSession();
   const router = useRouter();
+  const [activeRoomId, setActiveRoomId] = useState<string | undefined>();
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [view, setView] = useState<SidebarView>("rooms");
+
+  // Initialize Chat SDK
+  const sdk = useChat(
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
+    session?.session.token || "",
+  );
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -16,8 +31,13 @@ export default function Home() {
 
   if (isPending) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0f172a]">
-        <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#020617]">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-indigo-500/10 border-t-indigo-500 rounded-full animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Zap className="w-6 h-6 text-indigo-500 animate-pulse" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -25,124 +45,95 @@ export default function Home() {
   if (!session) return null;
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#0f172a] via-[#020617] to-black text-white font-(family-name:--font-geist-sans)">
-      <nav className="border-b border-white/10 bg-white/5 backdrop-blur-md sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <svg
-                className="w-6 h-6 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+    <div className="h-screen bg-[#020617] text-white flex overflow-hidden selection:bg-indigo-500/30">
+      <CreateGroupModal
+        sdk={sdk}
+        open={isGroupModalOpen}
+        onOpenChange={setIsGroupModalOpen}
+      />
+
+      {/* Background Effects */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[20%] left-[10%] w-[500px] h-[500px] bg-indigo-600/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[20%] right-[10%] w-[400px] h-[400px] bg-purple-600/5 blur-[120px] rounded-full" />
+      </div>
+
+      <div className="flex-1 flex relative z-10 w-full">
+        <Sidebar
+          sdk={sdk}
+          activeRoomId={activeRoomId}
+          onRoomSelect={(roomId) => {
+            setActiveRoomId(roomId);
+            setView("rooms"); // Always switch to rooms view when a room is selected
+          }}
+          view={view}
+          onViewChange={setView}
+          isGroupModalOpen={isGroupModalOpen}
+          onGroupModalChange={setIsGroupModalOpen}
+        />
+
+        <main className="flex-1 h-full flex flex-col relative bg-slate-900/10">
+          <AnimatePresence mode="wait">
+            {!activeRoomId ? (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.02 }}
+                className="flex-1 flex flex-col items-center justify-center p-8 text-center"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                />
-              </svg>
-            </div>
-            <span className="text-xl font-bold tracking-tight">
-              Realtime<span className="text-indigo-400">Chat</span>
-            </span>
-          </div>
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full border border-white/10">
-              <div className="w-8 h-8 rounded-full bg-linear-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-sm font-bold shadow-inner">
-                {session.user.name?.[0].toUpperCase()}
-              </div>
-              <span className="text-sm font-semibold text-slate-200">
-                {session.user.name}
-              </span>
-            </div>
-            <button
-              onClick={() => {
-                signOut();
-                router.push("/login");
-              }}
-              className="px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-sm font-medium transition-all"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </nav>
+                <div className="relative mb-8">
+                  <div className="w-32 h-32 bg-linear-to-tr from-indigo-500/20 to-purple-500/10 rounded-[3rem] blur-2xl absolute inset-0 animate-pulse" />
+                  <div className="w-24 h-24 bg-slate-800/50 backdrop-blur-xl border border-white/5 rounded-[2rem] flex items-center justify-center relative">
+                    <MessageSquare className="w-10 h-10 text-indigo-400" />
+                  </div>
+                </div>
+                <h2 className="text-3xl font-black text-white mb-3 tracking-tighter">
+                  Select a Conversation
+                </h2>
+                <p className="text-slate-400 font-medium max-w-sm leading-relaxed">
+                  Choose a room from the sidebar to start chatting or create a
+                  new group to connect with friends.
+                </p>
 
-      <main className="max-w-4xl mx-auto px-6 py-16">
-        <div className="relative group">
-          <div className="absolute -inset-1 bg-linear-to-r from-indigo-500 to-purple-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-          <div className="relative bg-white/5 border border-white/10 rounded-3xl p-12 backdrop-blur-xl">
-            <h1 className="text-5xl font-extrabold mb-6 tracking-tight bg-linear-to-r from-white via-white to-slate-400 bg-clip-text text-transparent">
-              Ready to chat?
-            </h1>
-            <p className="text-xl text-slate-400 max-w-2xl leading-relaxed mb-10">
-              Welcome back to your workspace,{" "}
-              <span className="text-white font-semibold">
-                @{session.user.email?.split("@")[0]}
-              </span>
-              . Keep your conversations flowing with our high-speed, secure
-              messaging engine.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <button className="p-6 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all text-left">
-                <svg
-                  className="w-8 h-8 text-blue-400 mb-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                <span className="block font-bold text-slate-200">
-                  New Connection
-                </span>
-              </button>
-              <button className="p-6 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all text-left">
-                <svg
-                  className="w-8 h-8 text-amber-400 mb-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-                <span className="block font-bold text-slate-200">
-                  Active Channels
-                </span>
-              </button>
-              <button className="p-6 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all text-left">
-                <svg
-                  className="w-8 h-8 text-slate-400 mb-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                  />
-                </svg>
-                <span className="block font-bold text-slate-200">Settings</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </main>
+                <div className="mt-10 grid grid-cols-2 gap-4 w-full max-w-md">
+                  <button
+                    onClick={() => setView("search")}
+                    className="p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all text-left group active:scale-95"
+                  >
+                    <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center mb-3 group-hover:bg-indigo-500 group-hover:text-white transition-all text-indigo-400">
+                      <Plus className="w-5 h-5" />
+                    </div>
+                    <p className="text-sm font-bold text-white">New Room</p>
+                    <p className="text-[11px] text-slate-500 font-bold uppercase tracking-tighter">
+                      Find People
+                    </p>
+                  </button>
+                  <button
+                    onClick={() => setIsGroupModalOpen(true)}
+                    className="p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all text-left group active:scale-95"
+                  >
+                    <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center mb-3 group-hover:bg-purple-500 group-hover:text-white transition-all text-purple-400">
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <p className="text-sm font-bold text-white">Create Group</p>
+                    <p className="text-[11px] text-slate-500 font-bold uppercase tracking-tighter">
+                      Multiple Members
+                    </p>
+                  </button>
+                </div>
+              </motion.div>
+            ) : (
+              <ChatWindow
+                key={activeRoomId}
+                sdk={sdk}
+                roomId={activeRoomId}
+                onBack={() => setActiveRoomId(undefined)}
+              />
+            )}
+          </AnimatePresence>
+        </main>
+      </div>
     </div>
   );
 }

@@ -28,7 +28,9 @@ export const getMessages = async (req: Request, res: Response) => {
 
   const messages = await MessageModel.find({
     roomId: validated.data.roomId,
-  }).sort({ createdAt: 1 });
+  })
+    .sort({ createdAt: 1 })
+    .populate("userId", "name username image");
 
   res.status(200).json(messages);
 };

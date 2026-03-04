@@ -29,7 +29,11 @@ const messageSchema = new mongoose.Schema<IMessage>(
       default: [],
     },
   },
-  { timestamps: true },
+  { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  },
 );
 
 export const MessageModel = mongoose.model<IMessage>("message", messageSchema);

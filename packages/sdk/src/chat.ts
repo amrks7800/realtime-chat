@@ -54,14 +54,16 @@ export function useChat(baseUrl: string, token: string) {
   const sdk = useMemo(() => new ChatSDK(baseUrl, token), [baseUrl, token]);
 
   useEffect(() => {
+    if (!token) return;
+
     const cleanup = sdk.onMessage((newMessage) => {
-      // Update the query cache for this room when a new message arrives
+      const roomId = newMessage.roomId;
       queryClient.setQueryData(
-        ["messages", newMessage.roomId],
+        ["messages", roomId],
         (old: Message[] | undefined) => {
           if (!old) return [newMessage];
-          // Check if message already exists (e.g. from optimistic update or race condition)
-          if (old.find((m) => m.id === newMessage.id)) return old;
+          const msgId = newMessage.id || (newMessage as any)._id;
+          if (old.find((m) => (m.id || (m as any)._id) === msgId)) return old;
           return [...old, newMessage];
         },
       );
@@ -69,9 +71,15 @@ export function useChat(baseUrl: string, token: string) {
 
     return () => {
       cleanup();
+    };
+  }, [sdk, queryClient, token]);
+
+  // Handle cleanup on unmount
+  useEffect(() => {
+    return () => {
       sdk.disconnect();
     };
-  }, [sdk, queryClient]);
+  }, [sdk]);
 
   return sdk;
 }

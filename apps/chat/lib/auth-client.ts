@@ -1,4 +1,4 @@
-import { createClient } from "@repo/sdk";
+import { createClient } from "@chatter/sdk";
 
 export const authClient = createClient(
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",

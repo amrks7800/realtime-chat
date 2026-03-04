@@ -6,6 +6,11 @@ const userSchema = new mongoose.Schema({
   emailVerified: { type: Boolean, required: true, default: false },
   image: { type: String },
   username: { type: String, unique: true, sparse: true },
-}, { timestamps: true });
+}, { 
+  timestamps: true, 
+  collection: "user",
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
 
 export const UserModel = mongoose.model("user", userSchema);

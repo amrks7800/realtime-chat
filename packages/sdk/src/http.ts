@@ -27,7 +27,7 @@ export class HttpSDK {
 
   async getRoom(
     roomId: string,
-  ): Promise<{ room: Room; participants: Participant[] }> {
+  ): Promise<{ room: Room }> {
     const { data } = await this.client.get(`/api/rooms/${roomId}`);
     return data;
   }
@@ -48,4 +48,46 @@ export class HttpSDK {
     });
     return data;
   }
+
+  async checkUsername(username: string): Promise<{ available: boolean }> {
+    const { data } = await this.client.get("/api/users/check-username", {
+      params: { username },
+    });
+    return data;
+  }
+
+  async searchUsers(search: string): Promise<User[]> {
+    const { data } = await this.client.get("/api/users/search", {
+      params: { search },
+    });
+    return data;
+  }
+
+  // Invitations
+  async sendInvitation(invitationData: {
+    receiverId: string;
+    type: "direct" | "group";
+    roomId?: string;
+  }): Promise<any> {
+    const { data } = await this.client.post("/api/invitations", invitationData);
+    return data;
+  }
+
+  async getMyInvitations(): Promise<any[]> {
+    const { data } = await this.client.get("/api/invitations/my");
+    return data;
+  }
+
+  async respondToInvitation(
+    invitationId: string,
+    status: "accepted" | "declined",
+  ): Promise<any> {
+    const { data } = await this.client.patch(
+      `/api/invitations/${invitationId}`,
+      { status },
+    );
+    return data;
+  }
 }
+
+import { User } from "@repo/types";

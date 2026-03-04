@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export interface IRoom {
   name: string;
-  image: string;
+  image?: string;
   lastMessage?: string;
   lastMessageTime?: Date;
   type: "private" | "group";
@@ -12,12 +12,16 @@ export interface IRoom {
 const roomSchema = new mongoose.Schema<IRoom>(
   {
     name: { type: String, required: true },
-    image: { type: String, required: true },
+    image: { type: String, required: false },
     lastMessage: { type: String, required: false },
     lastMessageTime: { type: Date, required: false },
     type: { type: String, required: true, enum: ["private", "group"] },
   },
-  { timestamps: true },
+  { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  },
 );
 
 
