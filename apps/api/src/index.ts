@@ -1,9 +1,15 @@
-import { log } from "@repo/logger";
-import { createServer } from "./server";
+import { createServerExpress } from "./server";
+import { connectDB } from "./lib/db";
 
-const port = process.env.PORT || 5001;
-const server = createServer();
+const port = process.env.PORT || 8080;
 
-server.listen(port, () => {
-  log(`api running on ${port}`);
-});
+const startServer = async () => {
+  await connectDB();
+  const server = createServerExpress();
+
+  server.listen(port, () => {
+    console.log(`api running on ${port}`);
+  });
+};
+
+startServer();

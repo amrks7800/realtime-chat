@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "start": "node dist/index.cjs",
-    "dev": "tsdown --watch --onSuccess \"node dist/index.cjs\"",
+    "dev": "tsx watch src/index.ts",
     "build": "tsdown",
     "check-types": "tsc --noEmit",
     "lint": "eslint src/ --max-warnings 0",
@@ -15,11 +15,21 @@
     "preset": "@repo/jest-presets/node"
   },
   "dependencies": {
-    "@repo/logger": "workspace:*",
+    "@aws-sdk/client-s3": "^3.1000.0",
+    "@repo/types": "workspace:*",
+    "@types/multer": "^2.0.0",
+    "@types/uuid": "^11.0.0",
+    "better-auth": "^1.4.18",
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
+    "dotenv": "^17.3.1",
     "express": "4.21.2",
-    "morgan": "^1.10.0"
+    "mongoose": "^9.2.1",
+    "morgan": "^1.10.0",
+    "multer": "^2.1.0",
+    "socket.io": "^4.8.3",
+    "uuid": "^13.0.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@jest/globals": "^30.2.0",
@@ -36,6 +46,7 @@
     "jest": "^30.2.0",
     "supertest": "^7.1.0",
     "tsdown": "0.9.3",
+    "tsx": "^4.21.0",
     "typescript": "5.9.3"
   }
 }
